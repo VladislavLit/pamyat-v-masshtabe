@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Память в масштабе</title>
+<meta name="referrer" content="no-referrer">
+<style>
+/* Макет: одна колонка «вахтенный журнал» — крупный текст, морская глубина, латунь как акцент */
+:root{
+  --deep:#0b1a26; --hull:#122636; --line:#24445a; --text:#e4ecf1; --muted:#9fb3c1; --brass:#c9a45c; --red:#b8463c;
+  --f-head: "Georgia","Times New Roman",serif;
+  --f-body: -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --f-mono: ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme: dark;
+}
+body{background:var(--deep);color:var(--text);font-family:var(--f-body);font-size:17px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+header{padding-block:48px 8px;display:flex;flex-direction:column;gap:12px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
+h1{font-family:var(--f-head);font-weight:700;font-size:clamp(34px,8vw,52px);line-height:1.05;margin:0;text-wrap:balance}
+h2{font-family:var(--f-head);font-size:26px;margin:0 0 12px;text-wrap:balance}
+p{margin:0 0 12px}
+.lead{font-size:19px;color:var(--text)}
+.muted{color:var(--muted)}
+.dedic{border-left:3px solid var(--brass);padding:4px 0 4px 16px;font-family:var(--f-head);font-style:italic;font-size:20px}
+.privacy{font-size:14px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+.passport{background:var(--hull);border:1px solid var(--line);border-radius:8px;padding:18px 18px 8px}
+.passport dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0 0 10px}
+.passport dt{color:var(--muted);font-size:14px}
+.passport dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.no{font-family:var(--f-mono);font-size:40px;color:var(--brass);letter-spacing:.06em}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:420px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.mem td{color:var(--text)} tr.mem td:first-child{border-left:3px solid var(--red)}
+.facts{display:grid;gap:12px}
+.fact{background:var(--hull);border-radius:6px;padding:12px 14px}
+.fact b{display:block;color:var(--brass);font-weight:600;margin-bottom:2px}
+.rule{height:1px;background:var(--line)}
+a{color:var(--brass)} a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+ol.src{font-size:14px;color:var(--muted);padding-left:20px;margin:0}
+ol.src li{margin-bottom:6px;word-break:break-word}
+footer{font-size:14px;color:var(--muted);text-align:left}
+.tabs{display:flex;flex-wrap:wrap;gap:8px 14px;padding-top:20px;font-size:15px}
+.tabs a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px}
+.tabs a:first-child{color:var(--brass)}
+.tabs a:hover{color:var(--text)}
+section{scroll-margin-top:16px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav class="tabs" aria-label="Разделы"><a href="../">← Все проекты</a><a href="#history">История проекта</a><a href="#series">Лодки серии</a><a href="#plaques">Именные таблички</a><a href="#model">О модели</a></nav>
+<header>
+  <div class="eyebrow">Проект 949А «Антей»</div>
+  <h1>Память в масштабе</h1>
+  <p class="lead">Атомные подводные крейсера проекта 949А «Антей». Модель сделана вручную офицером-подводником.</p>
+  <p class="privacy">Эта страница ничего о вас не собирает: без регистрации, без cookies, без счётчиков и рекламы. Просто читайте.</p>
+</header>
+
+<section class="dedic">Тем, кто уходил в автономку. Тем, кто ждал на берегу. И тем, кто только мечтает о море.</section>
+
+<section id="history">
+  <h2>Проект 949А «Антей»</h2>
+  <p>Подводные крейсера третьего поколения создавались против крупных корабельных групп, прежде всего авианосных. Главное оружие — дальние противокорабельные ракеты комплекса «Гранит».</p>
+  <p>Проект разработало ЦКБ-18, сегодня ЦКБ МТ «Рубин». Работы возглавлял главный конструктор Павел Пустынцев, с 1977 года — генеральный конструктор Игорь Баранов. Строили лодки в Северодвинске, на «Севмаше».</p>
+  <p>Начиная с третьего корпуса серии лодки строили по улучшенному проекту 949А. Он примерно на 10 метров длиннее 949-го (около 154 м), с увеличенным ограждением рубки и семилопастными винтами. На борту для экипажа были спортзал, сауна и даже небольшой бассейн.</p>
+</section>
+
+<section id="series">
+  <h2>Лодки проекта 949А</h2>
+  <p class="muted">Год вступления в строй и флот.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Корабль</th><th>Флот</th><th>В строю</th></tr></thead>
+    <tbody>
+      <tr><td>К-148 «Краснодар»</td><td>Северный</td><td class="num">1986</td></tr>
+      <tr><td>К-173 «Красноярск»</td><td>Тихоокеанский</td><td class="num">1986</td></tr>
+      <tr><td>К-132 «Иркутск»</td><td>Тихоокеанский</td><td class="num">1988</td></tr>
+      <tr><td>К-119 «Воронеж»</td><td>Северный</td><td class="num">1989</td></tr>
+      <tr><td>К-410 «Смоленск»</td><td>Северный</td><td class="num">1990</td></tr>
+      <tr><td>К-442 «Челябинск»</td><td>Тихоокеанский</td><td class="num">1990</td></tr>
+      <tr><td>К-456 «Тверь»</td><td>Тихоокеанский</td><td class="num">1992</td></tr>
+      <tr><td>К-266 «Орёл»</td><td>Северный</td><td class="num">1992</td></tr>
+      <tr><td>К-186 «Омск»</td><td>Тихоокеанский</td><td class="num">1993</td></tr>
+      <tr class="mem"><td>К-141 «Курск»</td><td>Северный</td><td class="num">1994</td></tr>
+      <tr><td>К-150 «Томск»</td><td>Тихоокеанский</td><td class="num">1996</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted" style="margin-top:10px">К-141 «Курск» погиб 12 августа 2000 года вместе со всем экипажем. Вечная память.</p>
+</section>
+
+<section>
+  <h2>А вы знали?</h2>
+  <div class="facts">
+    <div class="fact"><b>Два корпуса</b>Снаружи лёгкий корпус, внутри прочный, где живёт экипаж. Пространство между ними при погружении заполняется водой.</div>
+    <div class="fact"><b>Погружение и всплытие</b>Лодка погружается, принимая воду в балластные цистерны, и всплывает, продувая их сжатым воздухом.</div>
+    <div class="fact"><b>Рули</b>Горизонтальные рули управляют глубиной, вертикальные — курсом. Носовые рули на модели складываются, как на настоящей лодке.</div>
+    <div class="fact"><b>Почему нет иллюминаторов</b>На глубине темно, а любое окно ослабило бы прочный корпус. Обстановку «видят» гидроакустики, на слух.</div>
+    <div class="fact"><b>Автономка</b>Атомная установка позволяет месяцами не всплывать. Ограничивают поход запасы еды и выносливость людей.</div>
+  </div>
+</section>
+
+<section id="plaques">
+  <h2>Именные таблички</h2>
+  <p>К подставке можно заказать именную табличку: корабль, звание, фамилия, имя и отчество, годы службы. Буквы печатаются золотом, текст выравнивается по центру.</p>
+  <p class="muted">Пример: «АПКРРК К-132 «ИРКУТСК» · капитан-лейтенанту … · за службу в … годах».</p>
+</section>
+
+<section id="model">
+  <h2>Как создавалась эта модель</h2>
+  <p>Модель спроектирована и напечатана с нуля подводником, который прослужил на этих кораблях больше двадцати лет. Сотни часов работы и десятки пробных печатей ушли на то, чтобы каждая деталь встала на своё место.</p>
+  <p>Рули двигаются, флаги вставляются в гнёзда на рубке и в носу, винты вращаются. Подставку можно дополнить именной табличкой.</p>
+</section>
+
+<section>
+  <h2>Память экипажей</h2>
+  <p>Здесь со временем появятся фотографии и воспоминания экипажей лодок проекта 949А. Публикуются только с разрешения владельцев и после проверки. Личные данные не собираются.</p>
+</section>
+
+<div class="rule"></div>
+
+<details>
+  <summary class="muted" style="cursor:pointer">Источники фактов</summary>
+  <ol class="src" style="margin-top:10px">
+    <li>ЦКБ МТ «Рубин», страница проекта 949А: <a href="https://ckb-rubin.ru/en/projects/naval_engineering/submarines/project_949a/" rel="noopener noreferrer">ckb-rubin.ru</a></li>
+    <li>Статья Wikipedia «Project 949» (копия): <a href="https://wiki.krisyotam.com/content/wikipedia_en_all_nopic_2026-03/Project_949" rel="noopener noreferrer">wiki.krisyotam.com</a></li>
+    <li>Для дальнейшей сверки: <a href="https://sevmash.ru/rus/sevmash/history.html" rel="noopener noreferrer">история «Севмаша»</a>, <a href="https://www.deepstorm.ru/DeepStorm.files/45-92/nsrs/949A/K-132/K-132.htm" rel="noopener noreferrer">DeepStorm, К-132</a></li>
+  </ol>
+</details>
+
+<footer>© Автор модели и страницы, 2026. Тексты и фотографии принадлежат автору. Исторические факты сверены по открытым источникам.</footer>
+</div>
+</body>
+</html>
