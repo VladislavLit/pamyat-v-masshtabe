@@ -128,6 +128,11 @@ loader.load(MODEL, g => {
   // тени с сохранением острых граней (без «мятости» на гладких местах и полос на стыках)
   g.scene.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.geometry = toCreasedNormals(o.geometry, THREE.MathUtils.degToRad(60)); } });
   for (const n of g.scene.children) { n.name = n.name.replace(/_/g, ' '); // загрузчик меняет пробелы на «_»
+    if (n.name === 'Выдвижное устройство 3') { // «тарелка» РЛС смотрит в нос (замечание Владислава 25.11): была на левый борт → поворот на 90° вокруг вертикали (оси ствола)
+      g.scene.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(n), lo = bb.min.y + (bb.max.y - bb.min.y) * 0.25, sb = new THREE.Box3(), v = new THREE.Vector3(); // ось — по стволу (нижняя четверть), не по тарелке
+      n.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); if (v.y < lo) sb.expandByPoint(v); } }); const c = sb.getCenter(new THREE.Vector3());
+      const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2); c.y = n.position.y;
+      n.position.sub(c).applyQuaternion(q).add(c); n.quaternion.premultiply(q); n.updateMatrixWorld(true); }
     n.userData.home = n.position.clone(); n.userData.off = new THREE.Vector3(...(EXPLODE[n.name] || [0, 0, 0])); nodes.push(n); }
   // подвижные детали: ось вращения и точка шарнира (по габариту детали)
   for (const n of nodes) { const b = new THREE.Box3().setFromObject(n), c = b.getCenter(new THREE.Vector3()); let m = null;
