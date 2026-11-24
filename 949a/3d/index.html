@@ -38,7 +38,7 @@
 </head>
 <body>
 <div id="wrap">
-  <div id="title"><a href="../" style="color:#d4a84b;font-size:13px;text-decoration:none;pointer-events:auto">← к странице модели</a><h1>АПЛ проекта 949А «Антей» · модель 1:350</h1><p>Вращайте пальцем или мышью · приближайте колесом или двумя пальцами · нажмите на руль — он повернётся</p></div>
+  <div id="title"><a href="../" style="color:#d4a84b;font-size:13px;text-decoration:none;pointer-events:auto">← к странице модели</a><h1>АПЛ проекта 949А «Антей» · модель 1:350</h1><p>Модель можно повернуть мышью или пальцем, а колёсиком или двумя пальцами — рассмотреть ближе. Попробуйте нажать на руль — он повернётся.</p></div>
   <div id="label" role="status" aria-live="polite"></div>
   <div id="copy" style="position:absolute;left:12px;bottom:4px;font-size:10px;color:rgba(232,238,248,.45);pointer-events:none">© «Память в масштабе», 2026 · копирование и печать модели запрещены</div>
   <div id="loading"><span id="loadText">Загрузка модели… 0%</span><div class="track"><div class="fill" id="loadFill"></div></div></div>
@@ -157,7 +157,7 @@ const bar = document.getElementById('bar'), bMenu = document.getElementById('bMe
 if (matchMedia('(max-width: 700px)').matches) {
   bar.classList.add('closed');
   // короткая подсказка для телефона; исчезает при первом касании или через 8 с
-  const hint = document.querySelector('#title p'); hint.textContent = 'Крутите пальцем · двумя пальцами — приблизить';
+  const hint = document.querySelector('#title p'); hint.textContent = 'Поверните модель пальцем, а двумя пальцами рассмотрите ближе';
   const hide = () => hint.classList.add('hide'); setTimeout(hide, 8000); renderer.domElement.addEventListener('pointerdown', hide, { once: true });
 }
 bMenu.onclick = () => { const open = !bar.classList.toggle('closed'); bMenu.textContent = open ? 'Управление ▴' : 'Управление ▾'; bMenu.setAttribute('aria-expanded', String(open)); };
@@ -241,6 +241,20 @@ bShafts.onclick = () => { shaftsOpen = !shaftsOpen; bShafts.textContent = shafts
   list.forEach((x, i) => setTimeout(() => { x.userData.move.target = shaftsOpen ? x.userData.move.open : 0; }, Math.floor(i / 2) * 220)); say(shaftsOpen ? 'Шахты открываются по очереди' : 'Шахты закрываются'); };
 
 const clock = new THREE.Clock();
+// камера не заходит внутрь лодки и деталей: если она оказалась внутри габарита видимой детали,
+// отодвигаем её по тому же направлению наружу (чуть дальше выхода луча из габарита)
+const _bx = new THREE.Box3(), _ray = new THREE.Ray(), _p = new THREE.Vector3();
+function keepOutside() {
+  if (!nodes.length) return; scene.updateMatrixWorld();
+  const dir = camera.position.clone().sub(controls.target); let dist = dir.length(); if (dist < 1e-6) return; dir.divideScalar(dist);
+  for (let pass = 0; pass < 4; pass++) { let push = 0;
+    for (const n of nodes) { if (!n.visible) continue; _bx.setFromObject(n); _bx.expandByScalar(0.013);
+      if (!_bx.containsPoint(camera.position)) continue;
+      // выход луча из габарита: луч из точки камеры по направлению «от центра»
+      _ray.set(camera.position, dir); const back = new THREE.Ray(camera.position.clone().addScaledVector(dir, 3), dir.clone().negate());
+      if (back.intersectBox(_bx, _p)) push = Math.max(push, _p.distanceTo(controls.target)); }
+    if (push <= dist) break; dist = push + 0.004; camera.position.copy(controls.target).addScaledVector(dir, dist); }
+}
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05); t += ((exploded ? 1 : 0) - t) * Math.min(1, dt * 4);
   const e = t * t * (3 - 2 * t);
@@ -255,7 +269,7 @@ renderer.setAnimationLoop(() => {
     else n.position.copy(n.userData.home).addScaledVector(n.userData.off, e); }
   if (camAnim) { camAnim.s = Math.min(1, camAnim.s + dt * 1.6); const k = camAnim.s * camAnim.s * (3 - 2 * camAnim.s);
     camera.position.lerpVectors(camAnim.from, camAnim.to, k); if (camAnim.s >= 1) camAnim = null; }
-  controls.update(); renderer.render(scene, camera);
+  controls.update(); keepOutside(); renderer.render(scene, camera);
 });
 </script>
 </body>
