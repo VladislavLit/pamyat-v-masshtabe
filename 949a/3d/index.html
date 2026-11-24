@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>АПЛ 949А «Антей» — 3D-модель</title>
+<style>
+  :root { --bg1:#0b1a33; --bg2:#06101f; --gold:#d4a84b; --gold2:#f0c96a; --text:#e8eef8; --muted:#9fb0c8; }
+  html,body { margin:0; height:100%; background:var(--bg2); color:var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #wrap { position:relative; width:100%; height:100%; min-height:420px; overflow:hidden;
+          background: radial-gradient(ellipse at 50% 40%, #1a3560 0%, var(--bg1) 45%, var(--bg2) 100%); }
+  canvas { display:block; width:100%; height:100%; touch-action:none; }
+  .bar { position:absolute; left:50%; bottom:max(16px, env(safe-area-inset-bottom)); transform:translateX(-50%);
+         display:flex; gap:8px; flex-wrap:wrap; justify-content:center; width:calc(100% - 32px); }
+  button { font:inherit; font-size:15px; padding:10px 16px; border-radius:22px; cursor:pointer; color:#1a1206;
+           background:linear-gradient(180deg, var(--gold2), var(--gold)); border:0; box-shadow:0 2px 10px rgba(0,0,0,.35); }
+  button.ghost { background:rgba(255,255,255,.08); color:var(--text); border:1px solid rgba(212,168,75,.6); }
+  button:focus-visible { outline:2px solid #fff; outline-offset:2px; }
+  #title { position:absolute; top:14px; left:16px; right:16px; pointer-events:none; }
+  #title h1 { margin:0; font-size:clamp(16px,3.2vw,22px); font-weight:600; letter-spacing:.3px; }
+  #title p { margin:4px 0 0; font-size:13px; color:var(--muted); }
+  #label { position:absolute; top:70px; left:50%; transform:translateX(-50%); background:rgba(6,16,31,.85);
+           border:1px solid rgba(212,168,75,.7); padding:8px 14px; border-radius:14px; font-size:15px; display:none; max-width:calc(100% - 32px); text-align:center; }
+  #loading { position:absolute; inset:0; display:flex; flex-direction:column; gap:10px; align-items:center; justify-content:center; color:var(--muted); font-size:15px; }
+  #loading .track { width:min(260px,70%); height:6px; border-radius:3px; background:rgba(255,255,255,.12); overflow:hidden; }
+  #loading .fill { height:100%; width:0; background:linear-gradient(90deg,var(--gold),var(--gold2)); transition:width .2s; }
+  /* телефон: кнопки спрятаны под «Управление», не закрывают лодку */
+  @media (max-width: 700px) {
+    #bMenu { display:block !important; }
+    .bar { left:16px; transform:none; width:auto; right:16px; bottom:calc(max(16px, env(safe-area-inset-bottom)) + 52px); max-height:50vh; overflow:auto;
+           background:rgba(6,16,31,.85); border:1px solid rgba(212,168,75,.4); border-radius:16px; padding:10px; justify-content:flex-start; }
+    .bar.closed { display:none; }
+    .bar button { font-size:14px; padding:9px 13px; }
+    #title p { font-size:13px; transition:opacity .6s; }
+    #title p.hide { opacity:0; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="title"><a href="../" style="color:#d4a84b;font-size:13px;text-decoration:none;pointer-events:auto">← к странице модели</a><h1>АПЛ проекта 949А «Антей» · модель 1:350</h1><p>Вращайте пальцем или мышью · приближайте колесом или двумя пальцами · нажмите на руль — он повернётся</p></div>
+  <div id="label" role="status" aria-live="polite"></div>
+  <div id="copy" style="position:absolute;left:12px;bottom:4px;font-size:10px;color:rgba(232,238,248,.45);pointer-events:none">© «Память в масштабе», 2026 · копирование и печать модели запрещены</div>
+  <div id="loading"><span id="loadText">Загрузка модели… 0%</span><div class="track"><div class="fill" id="loadFill"></div></div></div>
+  <button id="bMenu" class="ghost" aria-expanded="true" style="position:absolute;right:16px;bottom:max(16px, env(safe-area-inset-bottom));display:none">Управление ▾</button>
+  <div class="bar" id="bar">
+    <button id="bExplode">Разобрать</button>
+    <button id="bHatch" class="ghost">Открыть торпедопогрузочный люк</button>
+    <button id="bSpin" class="ghost">Запустить винты</button>
+    <button id="bShafts" class="ghost">Открыть шахты</button>
+    <button id="bFold" class="ghost">Сложить носовые рули</button>
+    <button id="bMasts" class="ghost">Опустить выдвижные</button>
+    <button id="bFlag" class="ghost">Поставить Андреевский флаг</button>
+    <button id="bGuys" class="ghost">Убрать гюйс</button>
+    <button id="bSolo" class="ghost" style="display:none">Показать отдельно</button>
+    <button id="bReset" class="ghost">Вернуть ракурс</button>
+  </div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "./lib/three.module.js", "three/addons/": "./lib/addons/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const wrap = document.getElementById('wrap'), label = document.getElementById('label');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+wrap.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.55;
+const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 10);
+// свет: ключевой тёплый спереди-сверху, холодный контровой сзади (отделяет тёмный корпус от фона)
+const key = new THREE.DirectionalLight(0xfff1dd, 2.2); key.position.set(0.4, 0.6, 0.8); scene.add(key);
+const rim = new THREE.DirectionalLight(0x7fb2ff, 2.6); rim.position.set(-0.3, 0.35, -0.9); scene.add(rim);
+const fill = new THREE.HemisphereLight(0x9ab8e8, 0x0a1426, 0.7); scene.add(fill);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
+controls.minDistance = 0.12; controls.maxDistance = 2.6;
+
+const START = { pos: new THREE.Vector3(-0.38, 0.15, 0.52), target: new THREE.Vector3(-0.005, 0.03, 0) }; // нос слева, почти горизонтально, табличка к зрителю (выбор Владислава)
+// расстояние камеры так, чтобы лодка (~0.5 м с запасом) влезла по ширине экрана
+function fitScale() { const d0 = START.pos.clone().sub(START.target).length();
+  const need = 0.27 / (Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect); return Math.max(1, need / d0); }
+function resetView() { camAnim = null; const dir = START.pos.clone().sub(START.target).multiplyScalar(fitScale() * (exploded ? 1.45 : 1));
+  camera.position.copy(START.target).add(dir); controls.target.copy(START.target); controls.update(); }
+// куда отодвигать детали при «Разобрать» (метры, координаты сцены: X — к корме, Y — вверх, Z — к зрителю)
+const EXPLODE = {
+  'Корпус — верх, нос с рубкой': [-0.03, 0.07, 0], 'Корпус — верх, корма': [0.04, 0.07, 0],
+  'Корпус — низ, нос': [-0.03, 0.0, 0], 'Корпус — низ, корма': [0.04, 0.0, 0],
+  'Торпедопогрузочный люк': [-0.03, 0.105, 0], 'Торпеда': [-0.03, 0.085, 0],
+  'ГАК — носовой обтекатель': [-0.07, -0.02, 0], 'Панель красная правая': [0.04, 0, -0.04], 'Панель красная левая': [0.04, 0, 0.04],
+  'Руль носовой правый': [-0.03, 0.07, -0.05], 'Руль носовой левый': [-0.03, 0.07, 0.05],
+  'Перископ (позиция 1)': [-0.03, 0.13, 0], 'Андреевский флаг (позиция 1)': [-0.03, 0.13, 0],
+  'Выдвижное устройство 2': [-0.01, 0.14, 0], 'Выдвижное устройство 3': [0, 0.14, 0], 'Выдвижное устройство 4': [0.01, 0.14, 0], 'Выдвижное устройство 5': [0.02, 0.14, 0],
+  'Гюйс': [-0.05, 0.12, 0],
+  // штифты — посередине между деталями, которые соединяют
+  'Штифт корпуса 1': [-0.03, 0.035, 0], 'Штифт корпуса 2': [-0.03, 0.035, 0], 'Штифт корпуса 3': [0.04, 0.035, 0], 'Штифт корпуса 4': [0.04, 0.035, 0],
+  'Штифт корпуса 5': [0.04, 0.035, 0], 'Штифт корпуса 6': [0.04, 0.035, 0],
+  'Штифт стыка низ 1': [0.005, 0, 0], 'Штифт стыка низ 2': [0.005, 0, 0], 'Штифт стыка верх 1': [0.005, 0.07, 0], 'Штифт стыка верх 2': [0.005, 0.07, 0],
+  'Штифт хвоста 1': [0.06, 0, 0], 'Штифт хвоста 2': [0.06, 0, 0],
+  'Ось винта левого': [0.1, 0, 0.0125], 'Ось винта правого': [0.1, 0, -0.0125],
+  'Штифт стойки верхний носовой': [0, -0.0175, 0], 'Штифт стойки верхний кормовой': [0, -0.0175, 0],
+  'Штифт стойки нижний носовой': [0, -0.0525, 0], 'Штифт стойки нижний кормовой': [0, -0.0525, 0],
+  'Подставка — гнёзда стоек': [0, -0.07, 0],
+  'Кассета носового руля правая': [-0.03, 0.07, -0.03], 'Кассета носового руля левая': [-0.03, 0.07, 0.03],
+  ...Object.fromEntries([1,2,3,4,5,6].flatMap(i => [[`Крышка шахты правая №${i}`, [-0.03, 0.09, -0.03]], [`Крышка шахты левая №${i}`, [-0.03, 0.09, 0.03]]])),
+  'Хвост': [0.08, 0.0, 0], 'Руль вертикальный': [0.08, 0.02, 0], 'Руль нижний правый': [0.08, -0.015, -0.01], 'Руль нижний левый': [0.08, -0.015, 0.01],
+  'Руль горизонтальный правый': [0.08, 0, -0.02], 'Руль горизонтальный левый': [0.08, 0, 0.02],
+  'Винт левый': [0.125, 0, 0.025], 'Винт правый': [0.125, 0, -0.025],
+  'Стойка носовая': [0, -0.035, 0], 'Стойка кормовая': [0, -0.035, 0],
+  'Подставка': [0, -0.07, 0], 'Табличка «949А Антей»': [0, -0.05, 0.08]
+};
+const nodes = []; let exploded = false, t = 0, selected = null, solo = false;
+const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+// телефон / маленький экран — облегчённая модель (≈3 МБ), компьютер — полная (≈7,6 МБ)
+const LITE = matchMedia('(max-width: 900px)').matches || (navigator.connection && navigator.connection.saveData);
+const MODEL = '949A_model_lite.glb', MODEL_SIZE = 3.2e6; // для всех только лёгкая (решение 24.11.2026); полная хранится в папке 3D_просмотрщик/viewer
+loader.load(MODEL, g => {
+  document.getElementById('loading').remove();
+  scene.add(g.scene);
+  // тени с сохранением острых граней (без «мятости» на гладких местах и полос на стыках)
+  g.scene.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.geometry = toCreasedNormals(o.geometry, THREE.MathUtils.degToRad(60)); } });
+  for (const n of g.scene.children) { n.name = n.name.replace(/_/g, ' '); // загрузчик меняет пробелы на «_»
+    n.userData.home = n.position.clone(); n.userData.off = new THREE.Vector3(...(EXPLODE[n.name] || [0, 0, 0])); nodes.push(n); }
+  // подвижные детали: ось вращения и точка шарнира (по габариту детали)
+  for (const n of nodes) { const b = new THREE.Box3().setFromObject(n), c = b.getCenter(new THREE.Vector3()); let m = null;
+    if (n.name === 'Торпедопогрузочный люк') // ось — центр трубки-петли вдоль правой длинной кромки люка; люк лежит на наклоне носа (≈23°), ось наклонена так же
+      // ось и центр трубки найдены вписыванием окружности (R 0,91 мм): от углов габарита люка +10,93 / +7,03 / +0,96 мм
+      m = { kind: 'hatch', axis: new THREE.Vector3(0.916, 0.401, 0.017).normalize(), pivot: new THREE.Vector3(b.min.x + 0.01129, b.min.y + 0.00595, b.min.z + 0.00299), open: -1.5708 }; // ось = центр трубки со штифтом (по поперечному разрезу); 90°, как на печатной модели
+    else if (/^Руль (вертикальный|нижний)/.test(n.name)) m = { kind: 'rudder', axis: new THREE.Vector3(0, 1, 0), pivot: new THREE.Vector3(b.min.x + 0.0015, c.y, c.z) };
+    else if (/^Руль горизонтальный/.test(n.name)) m = { kind: 'rudder', axis: new THREE.Vector3(0, 0, 1), pivot: new THREE.Vector3(b.min.x + 0.0015, c.y, c.z) };
+    else if (/^Винт/.test(n.name)) m = { kind: 'spin', axis: new THREE.Vector3(1, 0, 0), pivot: c.clone() };
+    // носовые рули: складываются назад в корпус на шаре в корне (ось вертикальная), ~95°
+    else if (n.name === 'Руль носовой правый') m = { kind: 'fold', axis: new THREE.Vector3(0, 1, 0), pivot: new THREE.Vector3(b.min.x + 0.0020, c.y, b.max.z - 0.0016), open: -1.66 };
+    else if (n.name === 'Руль носовой левый') m = { kind: 'fold', axis: new THREE.Vector3(0, 1, 0), pivot: new THREE.Vector3(b.min.x + 0.0020, c.y, b.min.z + 0.0016), open: 1.66 };
+    // крышки шахт: петля-трубка у кромки палубы (ось вдоль лодки), открываются вверх ~100°
+    else if (/^Крышка шахты правая/.test(n.name)) m = { kind: 'cover', axis: new THREE.Vector3(1, 0, 0), pivot: new THREE.Vector3(c.x, b.max.y - 0.0015, b.max.z - 0.00175), open: 1.75 };
+    else if (/^Крышка шахты левая/.test(n.name)) m = { kind: 'cover', axis: new THREE.Vector3(1, 0, 0), pivot: new THREE.Vector3(c.x, b.max.y - 0.0015, b.min.z + 0.00175), open: -1.75 };
+    // выдвижные и Андреевский флаг (позиция 1): поднимаются/опускаются вдоль вертикали
+    else if (/^(Перископ|Выдвижное устройство)/.test(n.name)) m = { kind: 'mast', h: b.max.y - b.min.y, order: +(n.name.match(/\d/) || [1])[0] };
+    if (m) { m.angle = 0; m.target = 0; m.step = 0; n.userData.move = m; } }
+  applyVis(); // по умолчанию на позиции 1 — перископ, гюйс поднят
+  resetView();
+}, ev => { // ход загрузки, %
+  const p = Math.min(99, Math.round(ev.loaded / (ev.total || MODEL_SIZE) * 100));
+  const t = document.getElementById('loadText'), f = document.getElementById('loadFill'); if (t) t.textContent = `Загрузка модели… ${p}%`; if (f) f.style.width = p + '%';
+}, e => { document.getElementById('loading').textContent = 'Не удалось загрузить модель'; console.error(e); });
+// кнопка «Управление»: на телефоне панель кнопок свёрнута, открывается по нажатию
+const bar = document.getElementById('bar'), bMenu = document.getElementById('bMenu');
+if (matchMedia('(max-width: 700px)').matches) {
+  bar.classList.add('closed');
+  // короткая подсказка для телефона; исчезает при первом касании или через 8 с
+  const hint = document.querySelector('#title p'); hint.textContent = 'Крутите пальцем · двумя пальцами — приблизить';
+  const hide = () => hint.classList.add('hide'); setTimeout(hide, 8000); renderer.domElement.addEventListener('pointerdown', hide, { once: true });
+}
+bMenu.onclick = () => { const open = !bar.classList.toggle('closed'); bMenu.textContent = open ? 'Управление ▴' : 'Управление ▾'; bMenu.setAttribute('aria-expanded', String(open)); };
+
+function resize() { const w = wrap.clientWidth, h = wrap.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  camera.fov = w < h ? 48 : 32; camera.updateProjectionMatrix(); }
+window.addEventListener('resize', resize); resize();
+
+const bExplode = document.getElementById('bExplode'), bSolo = document.getElementById('bSolo');
+let camAnim = null; // плавный отъезд/наезд камеры при разборке
+bExplode.onclick = () => {
+  const dir = camera.position.clone().sub(controls.target); const k = exploded ? 1 / 1.45 : 1.45;
+  camAnim = { from: camera.position.clone(), to: controls.target.clone().add(dir.multiplyScalar(k)), s: 0 };
+  exploded = !exploded; bExplode.textContent = exploded ? 'Собрать' : 'Разобрать'; if (!exploded) select(null); label.style.display = exploded ? 'block' : 'none'; label.textContent = exploded ? 'Нажмите на деталь, чтобы узнать её название' : ''; };
+document.getElementById('bReset').onclick = () => { resetView(); };
+bSolo.onclick = () => { solo = !solo; bSolo.textContent = solo ? 'Показать все детали' : 'Показать отдельно';
+  for (const n of nodes) n.visible = (!solo || n === selected) && shown(n); if (solo && selected) { const c = new THREE.Box3().setFromObject(selected).getCenter(new THREE.Vector3()); controls.target.copy(c); } };
+
+function select(n) {
+  if (selected) selected.traverse(o => { if (o.isMesh) o.material.emissive.setHex(0x000000); });
+  selected = n; solo = false; bSolo.textContent = 'Показать отдельно'; applyVis();
+  if (n) { n.traverse(o => { if (o.isMesh) o.material.emissive.setHex(0x3a2a08); }); label.textContent = n.name; bSolo.style.display = ''; }
+  else bSolo.style.display = 'none';
+}
+// выбор детали касанием/кликом (только в разобранном виде; отличаем клик от поворота)
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let down = null;
+renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return;
+  const r = renderer.domElement.getBoundingClientRect(); ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ptr, camera); const hits = ray.intersectObjects(nodes.filter(n => n.visible), true);
+  if (!hits.length) return; const owner = h => { let o = h.object; while (o.parent && !nodes.includes(o)) o = o.parent; return o; };
+  let o = owner(hits[0]);
+  if (exploded) { select(o); return; }
+  // подвижная деталь среди первых попаданий (рули тонкие и прячутся за стабилизаторами)
+  const mv = hits.slice(0, 6).map(owner).find(x => x.userData.move && hits[0].distance > 0 && true);
+  if (mv) { act(mv); return; }
+  // нажали на хвост — поворачиваем ближайший к точке руль
+  if (o.name === 'Хвост') { let best = null, bd = 1e9;
+    for (const n of nodes) { const m = n.userData.move; if (!m || m.kind !== 'rudder') continue; const d = m.pivot.distanceTo(hits[0].point); if (d < bd) { bd = d; best = n; } }
+    if (best) act(best); } });
+// действия подвижных деталей
+let spinning = false;
+function say(text) { label.style.display = 'block'; label.textContent = text; clearTimeout(say.t); say.t = setTimeout(() => { if (!exploded) label.style.display = 'none'; }, 2500); }
+function act(n) { const m = n.userData.move;
+  if (m.kind === 'hatch') { m.target = m.target ? 0 : m.open; bHatch.textContent = m.target ? 'Закрыть люк' : 'Открыть торпедопогрузочный люк'; say(m.target ? 'Торпедопогрузочный люк открыт — внутри торпеда' : 'Люк закрыт'); }
+  else if (m.kind === 'fold') { const on = !m.target; for (const x of nodes) if (x.userData.move && x.userData.move.kind === 'fold') x.userData.move.target = on ? x.userData.move.open : 0;
+    bFold.textContent = on ? 'Выдвинуть носовые рули' : 'Сложить носовые рули'; say(on ? 'Носовые рули сложены в корпус' : 'Носовые рули выдвинуты'); }
+  else if (m.kind === 'mast') { m.target = m.target ? 0 : -m.h * 0.92; say(n.name + (m.target ? ' — опущено' : ' — поднято')); }
+  else if (m.kind === 'cover') { m.target = m.target ? 0 : m.open; say(n.name + (m.target ? ' — открыта' : ' — закрыта')); }
+  else if (m.kind === 'rudder') { m.step = (m.step + 1) % 4; m.target = [0, 0.45, 0, -0.45][m.step]; say(n.name + (m.target ? ' — переложен' : ' — прямо')); }
+  else if (m.kind === 'spin') { spinning = !spinning; bSpin.textContent = spinning ? 'Остановить винты' : 'Запустить винты'; say(spinning ? 'Винты вращаются' : 'Винты остановлены'); } }
+const bHatch = document.getElementById('bHatch'), bSpin = document.getElementById('bSpin');
+bHatch.onclick = () => { const n = nodes.find(x => x.name === 'Торпедопогрузочный люк'); if (n) act(n); };
+bSpin.onclick = () => { const n = nodes.find(x => /^Винт/.test(x.name)); if (n) act(n); };
+const bFold = document.getElementById('bFold'), bShafts = document.getElementById('bShafts');
+// выдвижные по очереди 1 → 5 (опускаются в рубку и поднимаются обратно)
+const bMasts = document.getElementById('bMasts'), bFlag = document.getElementById('bFlag'); let mastsDown = false;
+bMasts.onclick = () => { mastsDown = !mastsDown; bMasts.textContent = mastsDown ? 'Поднять выдвижные' : 'Опустить выдвижные';
+  const list = nodes.filter(x => x.userData.move && x.userData.move.kind === 'mast').sort((a, b) => a.userData.move.order - b.userData.move.order);
+  (mastsDown ? [...list].reverse() : list).forEach((x, i) => setTimeout(() => { x.userData.move.target = mastsDown ? -x.userData.move.h * 0.92 : 0; }, i * 300));
+  say(mastsDown ? 'Выдвижные устройства опускаются' : 'Выдвижные устройства поднимаются по очереди'); };
+// гюйс на носу: поставить / убрать
+const bGuys = document.getElementById('bGuys');
+bGuys.onclick = () => { guysOn = !guysOn; applyVis();
+  bGuys.textContent = guysOn ? 'Убрать гюйс' : 'Поставить гюйс'; say(guysOn ? 'Гюйс поднят на носу' : 'Гюйс убран'); };
+// позиция 1: перископ или Андреевский флаг (на выбор, как в комплекте)
+// Единое правило видимости: на позиции 1 — либо перископ, либо флаг (никогда оба); гюйс — по своей кнопке.
+// Выдвижные поднимаются/опускаются вместе с тем, что сейчас стоит на позиции 1 (скрытое тоже двигается, но не видно).
+let pos1Flag = false, guysOn = true;
+function shown(n) { if (/^Перископ/.test(n.name)) return !pos1Flag; if (/^Андреевский флаг/.test(n.name)) return pos1Flag; if (n.name === 'Гюйс') return guysOn; return true; }
+function applyVis() { for (const n of nodes) n.visible = (!solo || n === selected) && shown(n); }
+// флаг — не выдвижное: стоит всегда (не опускается с выдвижными); когда стоит флаг, перископ скрыт
+bFlag.onclick = () => { pos1Flag = !pos1Flag; applyVis(); bFlag.textContent = pos1Flag ? 'Поставить перископ' : 'Поставить Андреевский флаг';
+  say(pos1Flag ? 'На позиции 1 — Андреевский флаг, перископ убран' : 'На позиции 1 — перископ, флаг убран'); };
+bFold.onclick = () => { const n = nodes.find(x => x.userData.move && x.userData.move.kind === 'fold'); if (n) act(n); };
+// шахты по очереди: от носа к корме, правый и левый борт попарно
+let shaftsOpen = false;
+bShafts.onclick = () => { shaftsOpen = !shaftsOpen; bShafts.textContent = shaftsOpen ? 'Закрыть шахты' : 'Открыть шахты';
+  const list = nodes.filter(x => x.userData.move && x.userData.move.kind === 'cover').sort((a, b) => (+a.name.match(/\d+/)[0]) - (+b.name.match(/\d+/)[0]));
+  list.forEach((x, i) => setTimeout(() => { x.userData.move.target = shaftsOpen ? x.userData.move.open : 0; }, Math.floor(i / 2) * 220)); say(shaftsOpen ? 'Шахты открываются по очереди' : 'Шахты закрываются'); };
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05); t += ((exploded ? 1 : 0) - t) * Math.min(1, dt * 4);
+  const e = t * t * (3 - 2 * t);
+  for (const n of nodes) { const m = n.userData.move;
+    if (m && m.kind === 'mast') { m.angle += (m.target - m.angle) * Math.min(1, dt * 4);
+      n.position.copy(n.userData.home).addScaledVector(n.userData.off, e); n.position.y += m.angle; continue; }
+    if (m) { if (m.kind === 'spin') { if (spinning) m.angle += dt * 9; } else m.angle += (m.target - m.angle) * Math.min(1, dt * 5);
+      n.quaternion.setFromAxisAngle(m.axis, m.angle); }
+    // вращение вокруг шарнира P (с учётом собственного сдвига узла после сжатия): pos = P' + R·(home − P)
+    if (m) { const P1 = m.pivot.clone().addScaledVector(n.userData.off, e);
+      n.position.copy(n.userData.home).sub(m.pivot).applyQuaternion(n.quaternion).add(P1); }
+    else n.position.copy(n.userData.home).addScaledVector(n.userData.off, e); }
+  if (camAnim) { camAnim.s = Math.min(1, camAnim.s + dt * 1.6); const k = camAnim.s * camAnim.s * (3 - 2 * camAnim.s);
+    camera.position.lerpVectors(camAnim.from, camAnim.to, k); if (camAnim.s >= 1) camAnim = null; }
+  controls.update(); renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>

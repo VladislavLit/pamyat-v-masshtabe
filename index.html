@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Память в масштабе</title>
+<meta name="referrer" content="no-referrer">
+<style>
+/* Макет: одна колонка «вахтенный журнал» — крупный текст, морская глубина, латунь как акцент */
+:root{
+  --deep:#0b1a26; --hull:#122636; --line:#24445a; --text:#e4ecf1; --muted:#9fb3c1; --brass:#c9a45c; --red:#b8463c;
+  --f-head: "Georgia","Times New Roman",serif;
+  --f-body: -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --f-mono: ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme: dark;
+}
+body{background:var(--deep);color:var(--text);font-family:var(--f-body);font-size:17px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+header{padding-block:48px 8px;display:flex;flex-direction:column;gap:12px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
+h1{font-family:var(--f-head);font-weight:700;font-size:clamp(34px,8vw,52px);line-height:1.05;margin:0;text-wrap:balance}
+h2{font-family:var(--f-head);font-size:26px;margin:0 0 12px;text-wrap:balance}
+p{margin:0 0 12px}
+.lead{font-size:19px;color:var(--text)}
+.muted{color:var(--muted)}
+.dedic{border-left:3px solid var(--brass);padding:4px 0 4px 16px;font-family:var(--f-head);font-style:italic;font-size:20px}
+.privacy{font-size:14px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+.passport{background:var(--hull);border:1px solid var(--line);border-radius:8px;padding:18px 18px 8px}
+.passport dl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0 0 10px}
+.passport dt{color:var(--muted);font-size:14px}
+.passport dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.no{font-family:var(--f-mono);font-size:40px;color:var(--brass);letter-spacing:.06em}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:420px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.mem td{color:var(--text)} tr.mem td:first-child{border-left:3px solid var(--red)}
+.facts{display:grid;gap:12px}
+.fact{background:var(--hull);border-radius:6px;padding:12px 14px}
+.fact b{display:block;color:var(--brass);font-weight:600;margin-bottom:2px}
+.rule{height:1px;background:var(--line)}
+a{color:var(--brass)} a:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+ol.src{font-size:14px;color:var(--muted);padding-left:20px;margin:0}
+ol.src li{margin-bottom:6px;word-break:break-word}
+footer{font-size:14px;color:var(--muted);text-align:left}
+.cards{display:grid;gap:14px}
+.card{display:block;background:var(--hull);border:1px solid var(--line);border-radius:8px;padding:18px;text-decoration:none;color:var(--text)}
+a.card:hover{border-color:var(--brass)}
+.card h3{font-family:var(--f-head);font-size:22px;margin:4px 0 6px}
+.tag{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.card.soon{opacity:.6}
+</style>
+<script>/* всегда открывать сверху (кроме ссылок на раздел #...) — сразу и после загрузки */if("scrollRestoration" in history)history.scrollRestoration="manual";if(!location.hash){scrollTo(0,0);addEventListener("DOMContentLoaded",function(){scrollTo(0,0)});addEventListener("load",function(){if(scrollY<400)scrollTo(0,0)});}</script>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Мастерская моделей подводных лодок</div>
+  <h1>Память в масштабе</h1>
+  <p class="lead">Модели атомных подводных крейсеров, спроектированные и напечатанные вручную офицером-подводником.</p>
+  <p class="privacy">Сайт ничего о вас не собирает: без регистрации, без cookies и рекламы. Считается только общее число посещений — анонимно.</p>
+</header>
+
+<section>
+  <h2>Проекты</h2>
+  <div class="cards">
+    <a class="card" href="949a/"><div class="tag">Доступен</div><h3>Проект 949А «Антей»</h3><p class="muted" style="margin:0">История проекта, лодки серии, именные таблички, о модели.</p></a>
+    <div class="card soon"><div class="tag">В работе</div><h3>Следующий проект</h3><p class="muted" style="margin:0">Появится здесь, когда будет готов.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Новости</h2>
+  <p class="muted">Канал с новостями мастерской скоро появится. Ссылка будет здесь.</p>
+</section>
+
+<div class="rule"></div>
+<footer>© «Память в масштабе», 2026. Все права защищены. «Память в масштабе» — авторский проект: модели разработаны автором. Модели, 3D-модель, тексты и фотографии принадлежат автору. Копирование, печать и распространение моделей и материалов сайта без письменного разрешения автора запрещены.</footer>
+</div>
+<script data-goatcounter="https://pamyat-v-masshtabe.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
