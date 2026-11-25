@@ -161,7 +161,7 @@ section{scroll-margin-top:16px}
   <p class="lead rv" style="--i:2">Модель атомного подводного крейсера проекта 949А, спроектированная и собранная вручную офицером-подводником.</p>
   <!-- Видео: съёмка из открытого доступа (решение Владислава 23.11; при вопросах правообладателя — убрать) -->
   <div class="hero-media rise">
-    <video id="hero-video" src="video/hero.mp4" poster="video/hero.jpg" autoplay muted loop playsinline preload="metadata"
+    <video id="hero-video" data-src="video/hero.mp4" data-src-m="video/hero_m.mp4" poster="video/hero.jpg" autoplay muted loop playsinline preload="metadata"
       aria-label="Подводный крейсер проекта 949А идёт в надводном положении, съёмка с воздуха"></video>
     <button class="sound" id="sound-btn" type="button" aria-pressed="false">🔇 Включить звук</button>
   </div>
@@ -231,7 +231,7 @@ section{scroll-margin-top:16px}
   <h3 class="rv" style="font-family:var(--f-head);font-size:20px;margin:22px 0 10px">Ручная сборка — ускоренная съёмка</h3>
   <p class="rv" style="color:var(--muted);margin:0 0 12px">Каждую лодку я печатаю и собираю сам: зачистка, подгонка, сборка и проверка каждого узла. В ролике — только сборка, ускоренно.</p>
   <div class="build-video rv">
-    <video id="build-video" src="video/sborka.mp4" poster="video/sborka.jpg" autoplay muted loop playsinline preload="metadata"
+    <video id="build-video" data-src="video/sborka.mp4" data-src-m="video/sborka_m.mp4" poster="video/sborka.jpg" muted loop playsinline preload="none"
       aria-label="Ускоренная съёмка сборки модели 949А руками автора, от разложенных деталей до лодки на подставке"></video>
   </div>
   <!-- Фото готовой модели на подставке — добавить, когда пришлёт Владислав -->
@@ -298,7 +298,7 @@ section{scroll-margin-top:16px}
 <section id="plaques" class="rv">
   <h2>Именные таблички</h2>
   <div class="plaque-video">
-    <video src="video/tablichka.mp4" poster="video/tablichka.jpg" autoplay muted loop playsinline preload="metadata"
+    <video data-src="video/tablichka.mp4" poster="video/tablichka.jpg" muted loop playsinline preload="none"
       aria-label="Чёрная табличка с выпуклыми золотыми буквами «Атомный подводный ракетный крейсер проекта 949А «Антей»» и золотым QR-кодом ложится на подставку"></video>
   </div>
   <p>Подставка и таблички — чёрные матовые, буквы и QR-код выпуклые, золотом. QR-код ведёт на эту страницу — историю проекта.</p>
@@ -386,7 +386,7 @@ section{scroll-margin-top:16px}
       el.textContent = Math.round(to*e) + (k===1?suf:''); if(k<1) requestAnimationFrame(step); }
     el.textContent = '0'; requestAnimationFrame(step);
   }
-  if (!('IntersectionObserver' in window)) { els.forEach(function(e){e.classList.add('in')}); return; }
+  if (!('IntersectionObserver' in window)) { els.forEach(function(e){e.classList.add('in')}); document.querySelectorAll('video[data-src]').forEach(function(v){ v.src = v.dataset.src; v.play && v.play().catch(function(){}); }); return; }
   var io = new IntersectionObserver(function(list){
     list.forEach(function(en){
       if (!en.isIntersecting) return;
@@ -397,10 +397,15 @@ section{scroll-margin-top:16px}
     });
   }, {threshold:.15, rootMargin:'0px 0px -40px 0px'});
   els.forEach(function(e){ io.observe(e); });
-  /* видео: играет, только когда на экране */
+  /* видео: на телефоне и при «экономии трафика» — облегчённые версии (_m); главное видео грузится сразу,
+     остальные — только когда до них осталось ~1 экран; играет, только когда на экране */
+  var small = matchMedia('(max-width: 900px)').matches || (navigator.connection && navigator.connection.saveData);
+  function vsrc(v){ if (v.getAttribute('src') || !v.dataset.src) return; v.src = (small && v.dataset.srcM) || v.dataset.src; v.preload = 'auto'; }
+  var hero0 = document.getElementById('hero-video'); if (hero0) { vsrc(hero0); hero0.play && hero0.play().catch(function(){}); }
+  var near = new IntersectionObserver(function(l){ l.forEach(function(en){ if (en.isIntersecting) { vsrc(en.target); near.unobserve(en.target); } }); }, {rootMargin:'800px 0px'});
   var vio = new IntersectionObserver(function(l){ l.forEach(function(en){
-    var v = en.target; if (en.isIntersecting) { v.play && v.play().catch(function(){}); } else { v.pause && v.pause(); } }); }, {threshold:.4});
-  document.querySelectorAll('video[autoplay],#build-video').forEach(function(v){ vio.observe(v); });
+    var v = en.target; if (en.isIntersecting) { vsrc(v); v.play && v.play().catch(function(){}); } else { v.pause && v.pause(); } }); }, {threshold:.4});
+  document.querySelectorAll('video').forEach(function(v){ near.observe(v); vio.observe(v); });
   /* кнопка звука у главного видео */
   var hv = document.getElementById('hero-video'), sb = document.getElementById('sound-btn');
   if (hv && sb) sb.addEventListener('click', function(){

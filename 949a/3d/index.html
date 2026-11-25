@@ -124,12 +124,12 @@ const nodes = []; let exploded = false, t = 0, selected = null, solo = false;
 const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
 // телефон / маленький экран — облегчённая модель (≈3 МБ), компьютер — полная (≈7,6 МБ)
 const LITE = matchMedia('(max-width: 900px)').matches || (navigator.connection && navigator.connection.saveData);
-const MODEL = '949A_model_lite.glb', MODEL_SIZE = 3.2e6; // для всех только лёгкая (решение 24.11.2026); полная хранится в папке 3D_просмотрщик/viewer
+const MODEL = '949A_model_lite_n.glb', MODEL_SIZE = 4.5e6; // для всех только лёгкая (решение 24.11.2026); полная хранится в папке 3D_просмотрщик/viewer
 loader.load(MODEL, g => {
   document.getElementById('loading').remove();
   scene.add(g.scene);
   // тени с сохранением острых граней (без «мятости» на гладких местах и полос на стыках)
-  g.scene.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.geometry = toCreasedNormals(o.geometry, THREE.MathUtils.degToRad(60)); } });
+  g.scene.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); if (!o.geometry.attributes.normal) o.geometry = toCreasedNormals(o.geometry, THREE.MathUtils.degToRad(60)); } }); // в модели _n нормали рассчитаны заранее — телефон не пересчитывает
   for (const n of g.scene.children) { n.name = n.name.replace(/_/g, ' '); // загрузчик меняет пробелы на «_»
     if (n.name === 'Выдвижное устройство 3') { // «тарелка» РЛС смотрит в нос (замечание Владислава 25.11): была на левый борт → поворот на 90° вокруг вертикали (оси ствола)
       g.scene.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(n), lo = bb.min.y + (bb.max.y - bb.min.y) * 0.25, sb = new THREE.Box3(), v = new THREE.Vector3(); // ось — по стволу (нижняя четверть), не по тарелке
